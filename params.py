@@ -60,7 +60,7 @@ class Params(object):
     # ........ excitation - initial conditoons .......................
     source_lambda  = 1e-6 
     source_type  = 'off'
-
+    dtcfl = 1
 
 
     def __init__(self, **kargs):
@@ -96,7 +96,7 @@ class Params(object):
         self.source_omega = 2.0*np.pi*self.co/self.source_lambda
         return self    
 
-    def set_dims(self,shape=aux_shape,dtcfl=1):
+    def set_dims(self,shape=aux_shape,dtcfl=self.dtcfl):
         """
         set_dims(shape=aux_shape)
         calculates y_upper and my based on the material shape

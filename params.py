@@ -30,7 +30,7 @@ class Params(object):
         return self.ref_ind
 
     num_frames = 30
-    max_steps = 250000
+    t_final = 1
     solver_cfl = 0.9
     # ....... dimensions .............................................
     num_dim = 2
@@ -117,7 +117,7 @@ class Params(object):
             self.dimension_upper = np.zeros([self.num_dim])
             self.dimension_points = np.zeros([self.num_dim])
             self.dimension_resolution = np.zeros([self.num_dim])
-            self.dimension_steps = np.zeros([self.num_dim])
+            self.dimension_step_size = np.zeros([self.num_dim])
             self.dimension_lower[0] = 0.0e-6                     # fill array with some initial values
             self.dimension_upper[0] = 100e-6
             self.dimension_resolution[0] = 60
@@ -126,7 +126,7 @@ class Params(object):
             self.__dydt = 1.0
         
         self.dimension_points[0] = np.floor(self.dimension_resolution[0]*(self.dimension_upper[0] - self.dimension_lower[0])/self.source_lambda)
-        self.dimension_steps[0] = (self.dimension_upper[0]-self.dimension_lower[0])/self.dimension_points[0]
+        self.dimension_step_size[0] = (self.dimension_upper[0]-self.dimension_lower[0])/self.dimension_points[0]
 
         if self.num_dim>=2:
             if '_initialized' in self.__dict__:
@@ -145,13 +145,13 @@ class Params(object):
             else:
                 self.dimension_points[1] = np.floor(self.dimension_resolution[1]*(self.dimension_upper[1] - self.dimension_lower[1])/self.source_lambda)
 
-            self.dimension_steps[1] = (self.dimension_upper[1] - self.dimension_lower[1])/self.dimension_points[1]
+            self.dimension_step_size[1] = (self.dimension_upper[1] - self.dimension_lower[1])/self.dimension_points[1]
             if dtcfl==1:
-                self.__ddt = self.solver_cfl/(self.co*np.sqrt(1.0/(self.dimension_steps[0]**2) + 1.0/(self.dimension_steps[1]**2)))
+                self.__ddt = self.solver_cfl/(self.co*np.sqrt(1.0/(self.dimension_step_size[0]**2) + 1.0/(self.dimension_step_size[1]**2)))
                 self.solver_dt = self.__ddt
         elif self.num_dim==1:
             if dtcfl==1:
-                self.__ddt = 0.90/(self.co*np.sqrt(1.0/(self.dimension_steps[0]**2)))
+                self.__ddt = 0.90/(self.co*np.sqrt(1.0/(self.dimension_step_size[0]**2)))
                 self.solver_dt = self.__ddt
                 
         return self

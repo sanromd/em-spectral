@@ -21,25 +21,19 @@ sigma=5;
 chi2=0.01;
 chi3=0.00001;
 
-% Initial conditions
+% ---------- Initial conditions
 t = 0;
 electric = 10*exp(-6*x.^2).*sin(8*x);
 magnetic = 0.0*x;%;
 electricold=electric;
 magneticold=magnetic;
+
 mu=A*exp(-((x-v*t)/sigma).^2)+B;
 dt = .01; % Timestep size
  
-% initialise variables
-
+% ---------- Initialise variables
 k = 1i*[0:N/2-1 0 -N/2+1:-1]/Lx; % wave vector
- 
-% Setting up Plot
-tmax = 10; 
-nplots = round(tmax/dt);
-electricdata = [electric; zeros(nplots,N)]; tdata = t;
-magneticdata = [magnetic; zeros(nplots,N)]; 
- 
+
 for i = 1:nplots
     t=t+dt
     muold=mu;

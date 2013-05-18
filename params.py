@@ -29,27 +29,24 @@ class Params(object):
 
         return self.ref_ind
 
-    num_frames = 30
-    t_final = 1
-    solver_cfl = 0.9
+    num_frames  = 30
+    t_final     = 1
+    solver_cfl  = 0.9
     # ....... dimensions .............................................
-    num_dim = 2
-    solver_dt = .1
+    num_dim     = 2
+    dtcfl       = 1
     # ....... aux config .............................................
-    num_aux = 3
-    mode = 'TE'
+    num_aux     = 3
+    mode        = 'TE'
     vacuum_config = 'real'
-    aux_shape = 'homogeneous'
+    aux_shape   = 'homogeneous'
     aux_tensor_kind = 'isotropic'
-    aux_base = np.zeros([num_aux,num_aux])
-    _is_rip = 1
-    _nlayers = 2
-    _Nlayers = 5
+    aux_base    = np.zeros([num_aux,num_aux])
+    _is_rip     = 1
+    _nlayers    = 2
+    _Nlayers    = 5
     # ........ Boundary settings .................
-    bc_lower = ['scattering', 'none']
-    bc_upper = ['none', 'none']
-    aux_bc_lower = ['scattering','pml']
-    aux_bc_upper = ['metallic','metallic']
+    
     solver_tolerance = 1e-6
 
     # parameters needed for pml calculation
@@ -78,87 +75,107 @@ class Params(object):
         if '_initialized' in self.__dict__:
             pass
         else:
-            self.source_width = 10.0 # width in the y-direction 
-            self.source_t_offset  = 0.0
-            self.source_offset  = [0.0, 0.0]      # offset in the y-direction
+            self.source_width      = 10.0 # width in the y-direction 
+            self.source_t_offset   = 0.0
+            self.source_offset     = [0.0, 0.0]      # offset in the y-direction
             self.source_time_width = 1.0*self.source_lambda   
             if self.num_dim==2:
-                self.source_amp = np.zeros([3])
+                self.source_amp    = np.zeros([3])
                 self.source_amp[0] = 0.0                           # Amplitude of q1, q2 and q3
                 self.source_amp[1] = 1.0
                 self.source_amp[2] = 1.0
             elif self.num_dim==1:
-                self.source_amp = np.zeros([2])
+                self.source_amp    = np.zeros([2])
                 self.source_amp[0] = 0.0                           # Amplitude of q1, q2 and q3
                 self.source_amp[1] = 1.0
 
-        self.source_k        = 2.0*np.pi/self.source_lambda       # wave vector        
+        self.source_k     = 2.0*np.pi/self.source_lambda       # wave vector        
         self.source_omega = 2.0*np.pi*self.co/self.source_lambda
         return self    
 
-    def set_dims(self,shape=aux_shape,dtcfl=self.dtcfl):
+    def set_dims(self,shape=aux_shape,dtcfl=1):
         """
         set_dims(shape=aux_shape)
         calculates y_upper and my based on the material shape
         """
-        if self.num_dim==1:
-            self.dimension_name = 'x'
-        elif self.num_dim==2:
-            self.dimension_name = ['x','y']
-        elif self.num_dim==3:
-            self.dimension_name = ['x','y','z']
-
-        #dimension = np.zeros([self.num_dim])
         if '_initialized' in self.__dict__:
             pass
         else:
-            self._initialized = 1
-            self.dimension_lower = np.zeros([self.num_dim])
-            self.dimension_upper = np.zeros([self.num_dim])
-            self.dimension_points = np.zeros([self.num_dim])
+            if self.num_dim==1:
+                self.dimension_name = ['x']
+                self.bc_lower       = ['scattering']
+                self.bc_upper       = ['none']
+                self.aux_bc_lower   = ['scattering']
+                self.aux_bc_upper   = ['pml']
+            elif self.num_dim==2:
+                self.dimension_name = ['x','y']
+                self.bc_lower       = ['scattering', 'none']
+                self.bc_upper       = ['none', 'none']
+                self.aux_bc_lower   = ['scattering','metallic']
+                self.aux_bc_upper   = ['pml','metallic']
+            elif self.num_dim==3:
+                self.dimension_name = ['x','y','z']
+                self.bc_lower       = None
+                self.bc_upper       = None
+                self.aux_bc_lower   = None
+                self.aux_bc_upper   = None
+
+        if '_initialized' in self.__dict__:
+            pass
+        else:
+            self._initialized         = 1
+            self.dimension_lower      = np.zeros([self.num_dim])
+            self.dimension_upper      = np.zeros([self.num_dim])
+            self.dimension_num_points = np.zeros([self.num_dim])
             self.dimension_resolution = np.zeros([self.num_dim])
-            self.dimension_step_size = np.zeros([self.num_dim])
-            self.dimension_lower[0] = 0.0e-6                     # fill array with some initial values
-            self.dimension_upper[0] = 100e-6
-            self.dimension_resolution[0] = 60
-            self.__t_final = 1.0
-            self.__dxdt = 1.0
-            self.__dydt = 1.0
+            self.dimension_step_size  = np.zeros([self.num_dim])
+            self.dimension_lower[0]   = 0.0e-6                 
+            self.dimension_upper[0]   = 100e-6
+            self.dimension_resolution[0] = 10
+            self.__t_final  = 1.0
+            self.__dxdt     = 1.0
+            self.__dydt     = 1.0
         
-        self.dimension_points[0] = np.floor(self.dimension_resolution[0]*(self.dimension_upper[0] - self.dimension_lower[0])/self.source_lambda)
-        self.dimension_step_size[0] = (self.dimension_upper[0]-self.dimension_lower[0])/self.dimension_points[0]
+        self.dimension_num_points[0]    = np.floor(self.dimension_resolution[0]*(self.dimension_upper[0] - self.dimension_lower[0])/self.source_lambda)
+        self.dimension_step_size[0]     = (self.dimension_upper[0]-self.dimension_lower[0])/self.dimension_num_points[0]
 
         if self.num_dim>=2:
             if '_initialized' in self.__dict__:
                 pass
             else:
-                dimension_lower[1] = 0.0e-6
-                dimension_upper[1] = 1.0e-6                     # notice that for multilayer this is value will be over-written
-                dimension_resolution[1] = 20
+                dimension_lower[1]      = 0.0e-6
+                dimension_upper[1]      = 10.0e-6                     # notice that for multilayer this is value will be over-written
+                dimension_resolution[1] = 10
             
             if shape=='multilayer':
-                self.aux_N_layers = np.floor(np.sum(self.aux_num_layers[:])/self.aux_n_layers) + 1
-                self.dim_upper[1] = self.aux_N_layers*np.sum(self.aux_layers_thickness[:])
-                self.dimension_tlp = np.sum(self.aux_layers_thickness[:])
-                self.dimension_mlp = np.floor(self.tlp/1e-9)
-                self.dimension_points[1] = np.floor(self.dimension_resolution[1]*(self.dimension_upper[1] - self.dimension_lower[1])/1e-9)
+                self.aux_N_layers   = np.floor(np.sum(self.aux_num_layers[:])/self.aux_n_layers) + 1
+                self.dim_upper[1]   = self.aux_N_layers*np.sum(self.aux_layers_thickness[:])
+                self.dimension_tlp  = np.sum(self.aux_layers_thickness[:])
+                self.dimension_mlp  = np.floor(self.tlp/1e-9)
+                self.dimension_num_points[1] = np.floor(self.dimension_resolution[1]*(self.dimension_upper[1] - self.dimension_lower[1])/1e-9)
             else:
-                self.dimension_points[1] = np.floor(self.dimension_resolution[1]*(self.dimension_upper[1] - self.dimension_lower[1])/self.source_lambda)
+                self.dimension_num_points[1] = np.floor(self.dimension_resolution[1]*(self.dimension_upper[1] - self.dimension_lower[1])/self.source_lambda)
 
-            self.dimension_step_size[1] = (self.dimension_upper[1] - self.dimension_lower[1])/self.dimension_points[1]
+            self.dimension_step_size[1] = (self.dimension_upper[1] - self.dimension_lower[1])/self.dimension_num_points[1]
             if dtcfl==1:
-                self.__ddt = self.solver_cfl/(self.co*np.sqrt(1.0/(self.dimension_step_size[0]**2) + 1.0/(self.dimension_step_size[1]**2)))
-                self.solver_dt = self.__ddt
+                self._dt_cfl    = self.solver_cfl/(self.co*np.sqrt(1.0/(self.dimension_step_size[0]**2) + 1.0/(self.dimension_step_size[1]**2)))
+                self.solver_dt  = self._dt_cfl
+            else:
+                self._dt_cfl    = 0.0
+                self.solver_dt  = 0.1
         elif self.num_dim==1:
             if dtcfl==1:
-                self.__ddt = 0.90/(self.co*np.sqrt(1.0/(self.dimension_step_size[0]**2)))
-                self.solver_dt = self.__ddt
-                
+                self.__dt_cfl  = 0.90/(self.co*np.sqrt(1.0/(self.dimension_step_size[0]**2)))
+                self.solver_dt = self.__dt_cfl
+            else:
+                self._dt_cfl    = 0.0
+                self.solver_dt  = 0.1
+
         return self
 
     def set_material(self,shape=aux_shape,n_layers=_nlayers,N_layers=_Nlayers,rip=_is_rip):
-        """
-        set_material(shape=aux_shape,vx=0,vy=0,x_offset=10e-6,y_offset=0,sigma=10e-6,n_layers=2,N_layers=5)
+        r"""
+        set_material(shape=aux_shape,rip=_is_rip)
 
         Initializes the basic material parameters, user most then specify the values require for each simulation.
 
@@ -188,17 +205,19 @@ class Params(object):
            # background configuration
             self.aux_base[0,0:1] = 1.
             self.aux_base[1,0:1] = 1.
-            self.aux_base[2,2] = 1.
+            self.aux_base[2,2]   = 1.
         elif self.aux_tensor_kind=='bianisotropic':
             # background configuration
             self.aux_base[:,:] = 1.
         
+            self.aux_chi2 = 0.
+            self.aux_chi3 = 0.
         # set the modifiers to the refractive index
         # if interface declare position
         if shape=='homogeneous':
             pass
         elif shape=='xinterface':
-            self.aux_material = self.aux_base+1
+            self.aux_material   = self.aux_base+1
             self.aux_xinterface = np.zeros([self.num_aux,self.num_aux])
             if self.aux_tensor_kind=='isotropic':
                 np.fill_diagonal(self.aux_xinterface,self.dimension_upper[0]/2)
@@ -208,7 +227,7 @@ class Params(object):
             elif self.aux_tensor_kind=='bianisotropic':                
                 self.aux_xinterface.fill(1.0) 
         elif shape=='yinterface':
-            self.aux_material = self.aux_base+1
+            self.aux_material   = self.aux_base+1
             self.aux_yinterface = np.zeros([self.num_aux,self.num_aux])
             if self.aux_tensor_kind=='isotropic':
                 np.fill_diagonal(self.aux_yinterface,self.dimension_upper[1]/2)
@@ -218,8 +237,8 @@ class Params(object):
             elif self.aux_tensor_kind=='bianisotropic':                
                 self.aux_yinterface.fill(1.0) 
         elif shape=='interface':
-            self.aux_material = np.append(self.aux_base+1,self.aux_base+1,0).reshape(2,3,3)
-            self.aux_interface = np.zeros([self.num_dim,self.num_aux,self.num_aux])
+            self.aux_material   = np.append(self.aux_base+1,self.aux_base+1,0).reshape(2,3,3)
+            self.aux_interface  = np.zeros([self.num_dim,self.num_aux,self.num_aux])
             if self.aux_tensor_kind=='isotropic':
                 for j in range(0,self.num_dim):
                     np.fill_diagonal(self.aux_interface[j],self.dimension_upper[j]/2)
@@ -230,8 +249,8 @@ class Params(object):
             elif self.aux_tensor_kind=='bianisotropic':                
                 self.aux_interface.fill(1.0) 
         elif shape=='gaussian1dx' or shape=='gaussian':
-            self.material = self.aux_base+1
-            self.aux_gaussian_sigma =  self.aux_gaussian_offset = np.zeros([self.num_dim,self.num_aux,self.num_aux])
+            self.material           = self.aux_base+1
+            self.aux_gaussian_sigma = self.aux_gaussian_offset = np.zeros([self.num_dim,self.num_aux,self.num_aux])
             if self.aux_tensor_kind=='isotropic':
                 for j in range(0,self.num_dim):
                     np.fill_diagonal(self.aux_gaussian_sigma[j],1)
@@ -258,20 +277,7 @@ class Params(object):
                 self.aux_material[self.num_aux-2,self.num_aux-2] = 1.0
             elif self.aux_tensor_kind=='bianisotropic':                
                 self.aux_material.fill(1.0) 
-            # if self.aux_tensor_kind=='old_method':
-            #     self.aux_n_layers = n_layers
-            #     self.aux_layers = np.zeros([n_layers,7]) # _layer:  eps mu N t chi2e chi2m chi3e chi3m
-            #     self.aux_layers[0,0] = 1.5
-            #     self.aux_layers[0,1] = 1.5
-            #     self.aux_layers[0,2] = 10
-            #     self.aux_layers[0,3] = 15e-9
-            #     self.aux_layers[1,0] = 2.5
-            #     self.aux_layers[1,1] = 2.5
-            #     self.aux_layers[1,2] = self.aux_layers[0,2] - 1
-            #     self.aux_layers[1,3] = 50e-9
-            #     self.aux_N_layers = N_layers
-            # elif self.aux_tensor_kind=='isotropic':
-                
+
         if rip:
             self.rip = self._is_rip
             self.aux_rip_velocity = np.zeros([self.num_dim,self.num_aux,self.num_aux])
@@ -299,14 +305,14 @@ class Params(object):
             self.co = 1/np.sqrt(self.eo*self.mo)           # vacuum speed of light - [m/s]
             self.zo = np.sqrt(self.eo/self.mo)
         
-        if mode_config=='TE' and self.num_dim>=2:
+        if mode_config=='TE' and self.num_dim==2:
             self.vacuum[0] = self.mo
             self.vacuum[1] = self.mo
-            self.vacuum[2]  = self.eo
-        elif mode_config=='TM' and self.num_dim>=2:
+            self.vacuum[2] = self.eo
+        elif mode_config=='TM' and self.num_dim==2:
             self.vacuum[0] = self.eo
             self.vacuum[1] = self.eo
-            self.vacuum[2]  = self.mo
+            self.vacuum[2] = self.mo
 
         if self.num_dim==1:
             self.vacuum[0] = self.eo

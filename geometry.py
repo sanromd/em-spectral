@@ -37,7 +37,7 @@ class Dimension(object):
         """
 
         self.name = params.dimension_name[dim]
-        self.num_points = params.dimension_points[dim]
+        self.num_points = params.dimension_num_points[dim]
         self.lower = params.dimension_lower[dim]
         self.upper= params.dimension_upper[dim]
         self.num_cells = self.num_points - 1
@@ -180,7 +180,7 @@ class Grid(object):
     @property
     def num_dim(self):
         r"""(int) - Number of dimensions"""
-        return len(self._dimensions)
+        return len(self._dimensions)-1
     @property
     def dimensions(self):
         r"""(list) - List of :class:`Dimension` objects defining the 

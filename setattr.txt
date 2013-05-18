@@ -1,0 +1,12 @@
+class Something:
+
+   def get(self, prefix):
+     attrs = {}
+     for key in self.__dict__:
+        if key.startswith(prefix):
+          attrs[key] = getattr(self,key)
+     return attrs
+
+   def update(self, attrs):
+      for key, value in attrs.items():
+         setattr(self, key, value)

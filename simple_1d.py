@@ -114,6 +114,7 @@ tolerance=0.1^6;    # tolerance for fixed point iterations
 
 # refractive index map definition function 
 def etar(t,x):
+    pass
 
 def qinit(x):
     """

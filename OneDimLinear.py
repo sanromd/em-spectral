@@ -57,3 +57,8 @@ print solver._N, solver._k
 solver.kernel = 'python'
 
 
+def prestep1(solver,solution):
+    print solver,solution
+
+solver.add_prestep(prestep1)
+

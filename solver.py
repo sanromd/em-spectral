@@ -4,12 +4,6 @@
 import numpy as np
 class Solver(object):
 
-    def before_each_step(self,solution):
-        r"""
-        dummy function user must replace it by the desired calculation before each step.
-        """
-        pass
-
     kernel = 'python'
     update_before_each_step = 0
     aux_keep_copy = 0 
@@ -20,7 +14,6 @@ class Solver(object):
         for key in kargs:
             assert key in cls_dict
         self.__dict__.update(kargs)
-
         self.num_t_steps = np.floor(State.parameters.t_final/State.parameters.solver_dt)
         self.dt = State.parameters.solver_dt        
         self._q = State.q
@@ -42,6 +35,10 @@ class Solver(object):
         if self.aux_keep_copy==1:
             setattr(State,'_aux_old',None)
 
+        self.prestep_callbacks = []
+
+    def add_prestep(self, prestep):
+        self.prestep_callbacks.append(prestep)
 
     def run(self,state):
         for n in range(1,self.num_steps+1):
@@ -54,7 +51,9 @@ class Solver(object):
         """
         if self.update_before_each_step==1:
             state._aux_old = state.aux
-            self.before_each_step(self,state)
+            #self.before_each_step(self,state)
+            for prestep in self.prestep_callbacks:
+                prestep(self, state)
         else:
             state._aux_old = state.aux
 

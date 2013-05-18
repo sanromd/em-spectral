@@ -65,14 +65,15 @@ class Params(object):
         for key in kargs:
             assert key in cls_dict
         self.__dict__.update(kargs)
+        self._initialized = False
         self.set_vacuum(vc_config=self.vacuum_config)
         self.set_material(shape=self.aux_shape)
         self.set_source()
         self.set_dims(shape=self.aux_shape)
-        self._initialized = 1
+        self._initialized = True
 
     def set_source(self):
-        if '_initialized' in self.__dict__:
+        if self._initialized:
             pass
         else:
             self.source_width      = 10.0 # width in the y-direction 
@@ -98,7 +99,7 @@ class Params(object):
         set_dims(shape=aux_shape)
         calculates y_upper and my based on the material shape
         """
-        if '_initialized' in self.__dict__:
+        if self._initialized:
             pass
         else:
             if self.num_dim==1:
@@ -120,10 +121,9 @@ class Params(object):
                 self.aux_bc_lower   = None
                 self.aux_bc_upper   = None
 
-        if '_initialized' in self.__dict__:
+        if self._initialized:
             pass
         else:
-            self._initialized         = 1
             self.dimension_lower      = np.zeros([self.num_dim])
             self.dimension_upper      = np.zeros([self.num_dim])
             self.dimension_num_points = np.zeros([self.num_dim])
@@ -140,7 +140,7 @@ class Params(object):
         self.dimension_step_size[0]     = (self.dimension_upper[0]-self.dimension_lower[0])/self.dimension_num_points[0]
 
         if self.num_dim>=2:
-            if '_initialized' in self.__dict__:
+            if self._initialized:
                 pass
             else:
                 dimension_lower[1]      = 0.0e-6

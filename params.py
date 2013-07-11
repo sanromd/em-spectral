@@ -124,6 +124,7 @@ class Params(object):
         if self._initialized:
             pass
         else:
+            print self.num_dim
             self.dimension_lower      = np.zeros([self.num_dim])
             self.dimension_upper      = np.zeros([self.num_dim])
             self.dimension_num_points = np.zeros([self.num_dim])
@@ -143,9 +144,9 @@ class Params(object):
             if self._initialized:
                 pass
             else:
-                dimension_lower[1]      = 0.0e-6
-                dimension_upper[1]      = 10.0e-6                     # notice that for multilayer this is value will be over-written
-                dimension_resolution[1] = 10
+                self.dimension_lower[1]      = 0.0e-6
+                self.dimension_upper[1]      = 10.0e-6                     # notice that for multilayer this is value will be over-written
+                self.dimension_resolution[1] = 10
             
             if shape=='multilayer':
                 self.aux_N_layers   = np.floor(np.sum(self.aux_num_layers[:])/self.aux_n_layers) + 1
@@ -217,26 +218,29 @@ class Params(object):
         if shape=='homogeneous':
             pass
         elif shape=='xinterface':
+            self.material_type = 1
             self.aux_material   = self.aux_base+1
-            self.aux_xinterface = np.zeros([self.num_aux,self.num_aux])
+            self.aux_interface = np.zeros([self.num_aux,self.num_aux])
             if self.aux_tensor_kind=='isotropic':
-                np.fill_diagonal(self.aux_xinterface,self.dimension_upper[0]/2)
+                np.fill_diagonal(self.aux_interface,self.dimension_upper[0]/2)
             elif self.aux_tensor_kind=='anisotropic' and self.num_dim>=2:
-                np.fill_diagonal(self.aux_xinterface,self.dimension_upper[0]/2)
-                self.aux_xinterface[self.num_aux-2,self.num_aux-2] = 1.0
+                np.fill_diagonal(self.aux_interface,self.dimension_upper[0]/2)
+                self.aux_interface[self.num_aux-2,self.num_aux-2] = 1.0
             elif self.aux_tensor_kind=='bianisotropic':                
-                self.aux_xinterface.fill(1.0) 
+                self.aux_interface.fill(1.0) 
         elif shape=='yinterface':
+            self.material_type = 2
             self.aux_material   = self.aux_base+1
-            self.aux_yinterface = np.zeros([self.num_aux,self.num_aux])
+            self.aux_interface = np.zeros([self.num_aux,self.num_aux])
             if self.aux_tensor_kind=='isotropic':
-                np.fill_diagonal(self.aux_yinterface,self.dimension_upper[1]/2)
+                np.fill_diagonal(self.aux_interface,self.dimension_upper[1]/2)
             elif self.aux_tensor_kind=='anisotropic' and self.num_dim>=2:
-                np.fill_diagonal(self.aux_yinterface,self.dimension_upper[1]/2)
-                self.aux_yinterface[self.num_aux-2,self.num_aux-2] = 1.0
+                np.fill_diagonal(self.aux_interface,self.dimension_upper[1]/2)
+                self.aux_interface[self.num_aux-2,self.num_aux-2] = 1.0
             elif self.aux_tensor_kind=='bianisotropic':                
-                self.aux_yinterface.fill(1.0) 
+                self.aux_interface.fill(1.0) 
         elif shape=='interface':
+            self.material_type = 3
             self.aux_material   = np.append(self.aux_base+1,self.aux_base+1,0).reshape(2,3,3)
             self.aux_interface  = np.zeros([self.num_dim,self.num_aux,self.num_aux])
             if self.aux_tensor_kind=='isotropic':
@@ -249,23 +253,31 @@ class Params(object):
             elif self.aux_tensor_kind=='bianisotropic':                
                 self.aux_interface.fill(1.0) 
         elif shape=='gaussian1dx' or shape=='gaussian':
-            self.material           = self.aux_base+1
-            self.aux_gaussian_sigma = self.aux_gaussian_offset = np.zeros([self.num_dim,self.num_aux,self.num_aux])
+            if shape=='gaussian1dx':
+                self.material_type = 4
+            else:
+                self.material_type = 5
+
+            self.aux_base  = 1.5*self.aux_base
+            self.aux_delta = 0.1*self.aux_base
+            self.aux_sigma = self.aux_offset = np.zeros([self.num_dim,self.num_aux,self.num_aux])
             if self.aux_tensor_kind=='isotropic':
                 for j in range(0,self.num_dim):
-                    np.fill_diagonal(self.aux_gaussian_sigma[j],1)
-                    np.fill_diagonal(self.aux_gaussian_offset[j],1)
+                    np.fill_diagonal(self.aux_sigma[j],1)
+                    np.fill_diagonal(self.aux_offset[j],1)
             elif self.aux_tensor_kind=='anisotropic' and self.num_dim>=2:
                 for j in range(0,self.num_dim):
-                    np.fill_diagonal(self.aux_gaussian_sigma[j],1)
-                    np.fill_diagonal(self.aux_gaussian_offset[j],1)
-                self.aux_gaussian_sigma[:,0:self.num_aux-1,0:self.num_aux-2] = self.aux_gaussian_offset[:,0:self.num_aux-2,0:self.num_aux-2] = 1.0
+                    np.fill_diagonal(self.aux_sigma[j],1)
+                    np.fill_diagonal(self.aux_offset[j],1)
+                self.aux_sigma[:,0:self.num_aux-1,0:self.num_aux-2] = self.aux_offset[:,0:self.num_aux-2,0:self.num_aux-2] = 1.0
             elif self.aux_tensor_kind=='bianisotropic':
-                self.aux_gaussian_sigma.fill(1.0)
-                self.aux_gaussian_offset.fill(1.0)
+                self.aux_sigma.fill(1.0)
+                self.aux_offset.fill(1.0)
         elif shape=='jump':
+            self.material_type = 6
             pass
         elif shape=='multilayer':
+            self.material_type = 7
             self.aux_n_layers = n_layers
             self.aux_material = np.zeros([n_layers,self.num_aux,self.num_aux])
             self.aux_layers_thickness = np.ones([n_layers])
@@ -280,14 +292,14 @@ class Params(object):
 
         if rip:
             self.rip = self._is_rip
-            self.aux_rip_velocity = np.zeros([self.num_dim,self.num_aux,self.num_aux])
+            self.aux_velocity = np.zeros([self.num_dim,self.num_aux,self.num_aux])
             if self.aux_tensor_kind=='isotropic':
                 for j in range(0,self.num_dim):
-                    np.fill_diagonal(self.aux_rip_velocity[j],1.0)
+                    np.fill_diagonal(self.aux_velocity[j],1.0)
             elif self.aux_tensor_kind=='anisotropic':
                 for j in range(0,self.num_dim):
-                    np.fill_diagonal(self.aux_rip_velocity[j],1.0)
-                self.aux_rip_velocity[:,0:self.num_aux-2,0:self.num_aux-2] = 1.0
+                    np.fill_diagonal(self.aux_velocity[j],1.0)
+                self.aux_velocity[:,0:self.num_aux-2,0:self.num_aux-2] = 1.0
 
         return self
 

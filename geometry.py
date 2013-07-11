@@ -178,10 +178,6 @@ class Grid(object):
 
     # ========== Property Definitions ========================================
     @property
-    def num_dim(self):
-        r"""(int) - Number of dimensions"""
-        return len(self._dimensions)-1
-    @property
     def dimensions(self):
         r"""(list) - List of :class:`Dimension` objects defining the 
                 grid's extent and resolution"""
@@ -215,7 +211,7 @@ class Grid(object):
         "number of points in each dimension"
         return self.get_dim_attribute('num_points')
 
-       
+    _da_swidth = 1       
     
     # ========== Class Methods ===============================================
     def __init__(self,dimensions,method='curvilinear',Lnpi=4):
@@ -227,10 +223,21 @@ class Grid(object):
         for dim in dimensions:
             self.add_dimension(dim)
 
+        setattr(self, 'num_dim', len(dimensions))
+
         if method=='spectral':
             print self._dimensions
             self.cart_to_spectral(dime,npis=Lnpi)
-        #super(Grid,self).__init__()
+        else:
+            try:
+                from petsc4py import PETSc
+                self._da_stype  = PETSc.DA.StencilType.STAR
+                self.da = PETSc.DA().create(self.num_points, dof=1,
+                                            stencil_type=self._da_stype,
+                                            stencil_width=self._da_swidth)
+            except:
+                print 'petsc4py is not installed in this machine, falling back to serial'
+                self.da = fake_da(self.num_points)
     
     # ========== Dimension Manipulation ======================================
     def add_dimension(self,dimension):
@@ -249,8 +256,8 @@ class Grid(object):
 
         self._dimensions.append(dimension.name)
         setattr(self,dimension.name,dimension)
-        
-        
+
+
     def get_dim_attribute(self,attr):
         r"""
         Returns a tuple of all dimensions' attribute attr
@@ -316,3 +323,31 @@ class Grid(object):
 
             ei_temp = _dime(dimensions.name + '_spectral', self._spectral_lower,self._spectral_upper,dimensions.num_points)
             self.add_dimension(ei_temp)
+
+class fake_da(self):
+    "creates a fake a da"
+    @property
+    def getRanges(self):
+        pass
+    @property
+    def getGhostRanges(self):
+        pass
+    
+    @property
+    def 
+    def da(self,num_points):
+        if len(num_points)==1:
+            self.da = np.meshgrid(np.linspace(0,num_points[0],num_points[0]),[0])
+        elif len(num_points)==2:
+            self.da = np.meshgrid(np.linspace(0,num_points[0],num_points[0]),
+                                  np.linspace(0,num_points[1],num_points[1]))
+        elif len(num_points)==3:
+            self.da = np.meshgrid(np.linspace(0,num_points[0],num_points[0]),
+                                  np.linspace(0,num_points[1],num_points[1]),
+                                  np.linspace(0,num_points[2],num_points[2]))
+
+    def createGlobalVec(self):
+        pass
+    
+    def createLocalVec(self):
+        pass
